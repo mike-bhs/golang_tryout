@@ -1,18 +1,13 @@
 package server
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/golang_tryout/lib/web"
+	"github.com/golang_tryout/app/models"
 )
 
-func StartServer() *gin.Engine {
-	engine := gin.Default()
-
-	setRoutes(engine)
-
-	return engine
+func (serv *Server) SetRoutes() {
+	serv.Engine.GET("/transactions", serv.GetTransactions)
 }
 
-func setRoutes(engine *gin.Engine) {
-	engine.GET("/transactions", web.GetTransactions)
+func (serv *Server) RunMigrations() {
+	serv.DB.AutoMigrate(&models.Transaction{})
 }

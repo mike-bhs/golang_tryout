@@ -1,8 +1,16 @@
 package main
 
-import "github.com/golang_tryout/server"
+import (
+	"github.com/golang_tryout/server"
+)
 
 func main() {
-	engine := server.StartServer()
-	engine.Run()
+	serv := server.InitializeServer()
+
+	defer serv.DB.Close()
+
+	serv.RunMigrations()
+	serv.SetRoutes()
+
+	serv.Engine.Run()
 }

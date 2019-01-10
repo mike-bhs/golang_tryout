@@ -23,6 +23,28 @@ var accountData = [][]string{
 	[]string{"regulated", "non-client", "not_account_holder", "prohibited", ""},
 }
 
+func TestClassifyWithoutHouseAccount(t *testing.T) {
+	for _, row := range accountData {
+		account := AccountClassification{regulatedService: row[0], complianceRelationship: row[1]}
+		sender := Sender{classification: row[2]}
+
+		expectedFundingType := row[3]
+		expectedFundingMode := row[4]
+
+		actualFundingType, actualFundingMode := ClassifyWithoutHouseAccount(sender, account)
+
+		if expectedFundingType != actualFundingType {
+			message := fmt.Sprintf("ClassifyWithoutHouseAccount fundingType expected: '%s', got: '%s'", expectedFundingType, actualFundingType)
+			t.Error(message)
+		}
+
+		if expectedFundingMode != actualFundingMode {
+			message := fmt.Sprintf("ClassifyWithoutHouseAccount fundingMode expected: '%s', got: '%s'", expectedFundingMode, actualFundingMode)
+			t.Error(message)
+		}
+	}
+}
+
 var houseAccountData = [][]string{
 	// regulated_service account house_account sender funding_type funding_mode
 
@@ -49,45 +71,25 @@ var houseAccountData = [][]string{
 	[]string{"regulated", "client", "non-client", "not_account_holder", "prohibited", ""},
 }
 
-func TestClassifyWithoutHouseAccount(t *testing.T) {
-	for _, row := range accountData {
-		aClassification := AccountClassification{regulatedService: row[0], complianceRelationship: row[1]}
-		sender := Sender{classification: row[2]}
+func TestClassifyWithHouseAccount(t *testing.T) {
+	for _, row := range houseAccountData {
+		account := AccountClassification{regulatedService: row[0], complianceRelationship: row[1]}
+		houseAccount := AccountClassification{regulatedService: row[0], complianceRelationship: row[2]}
+		sender := Sender{classification: row[3]}
 
-		expectedFundingType := row[3]
-		expectedFundingMode := row[4]
+		expectedFundingType := row[4]
+		expectedFundingMode := row[5]
 
-		actualFundingType, actualFundingMode := ClassifyWithoutHouseAccount(sender, aClassification)
+		actualFundingType, actualFundingMode := ClassifyWithHouseAccount(sender, account, houseAccount)
 
 		if expectedFundingType != actualFundingType {
-			message := fmt.Sprintf("ClassifyWithoutHouseAccount Funding Type: expected: '%s', got: '%s'", expectedFundingType, actualFundingType)
+			message := fmt.Sprintf("ClassifyWithHouseAccount fundingType expected: '%s', got: '%s'", expectedFundingType, actualFundingType)
 			t.Error(message)
 		}
 
 		if expectedFundingMode != actualFundingMode {
-			message := fmt.Sprintf("ClassifyWithoutHouseAccount Funding Mode: expected: '%s', got: '%s'", expectedFundingMode, actualFundingMode)
+			message := fmt.Sprintf("ClassifyWithHouseAccount fundingMode expected: '%s', got: '%s'", expectedFundingMode, actualFundingMode)
 			t.Error(message)
 		}
 	}
 }
-
-// func TestClassifyWithHouseAccount(t *testing.T) {
-// 	for _, row := range houseAccountData {
-// 		aClassification := AccountClassification{regulatedService: row[0], complianceRelationship: row[1]}
-// 		haClassification := AccountClassification{regulatedService: row[0], complianceRelationship: row[2]}
-// 		sender := Sender{classification: row[3]}
-//
-// 		expectedFundingType := row[4]
-// 		expectedFundingMode := row[5]
-//
-// 		actualFundingType, actualFundingMode := ClassifyWithHouseAccount(sender, aClassification, haClassification)
-//
-// 		if expectedFundingType != actualFundingType {
-// 			t.Error("FundingType was calculated wrong for ClassifyWithHouseAccount")
-// 		}
-//
-// 		if expectedFundingMode != actualFundingMode {
-// 			t.Error("FundingMode was calculated wrong for ClassifyWithHouseAccount")
-// 		}
-// 	}
-// }

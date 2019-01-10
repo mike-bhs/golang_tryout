@@ -46,7 +46,7 @@ func (s Sender) IsNotAccountHolder() bool {
 }
 
 func ClassifyWithoutHouseAccount(sender Sender, account AccountClassification) (string, string) {
-	fundingType := calculateFundingType(sender, account)
+	fundingType := calculateFundingTypeWithoutHouseAccount(sender, account)
 
 	if fundingType == PROHIBITED {
 		return fundingType, ""
@@ -56,26 +56,28 @@ func ClassifyWithoutHouseAccount(sender Sender, account AccountClassification) (
 		return fundingType, fmt.Sprintf("%s_%s", fundingType, OBO_CLIENT)
 	}
 
-	switch fundingType {
-	case RECEIPTS:
-		if account.IsClient() {
-			return fundingType, fmt.Sprintf("%s_%s", fundingType, FROM_CLIENT)
-		} else {
-			return fundingType, fmt.Sprintf("%s_%s", fundingType, OBO_CLIENT)
-		}
+	if fundingType == RECEIPTS && account.IsClient() {
+		return fundingType, fmt.Sprintf("%s_%s", fundingType, FROM_CLIENT)
+	}
+
+	if fundingType == RECEIPTS && !account.IsClient() {
+		return fundingType, fmt.Sprintf("%s_%s", fundingType, OBO_CLIENT)
 	}
 
 	return "", ""
 }
 
-func calculateFundingType(sender Sender, account AccountClassification) string {
+func calculateFundingTypeWithoutHouseAccount(sender Sender, account AccountClassification) string {
 	switch {
 	case account.IsNonClient():
 		return PROHIBITED
+
 	case account.IsRegulated() && account.IsClient() && sender.IsNotAccountHolder():
 		return PROHIBITED
+
 	case sender.IsNotAccountHolder():
 		return COLLECTIONS
+
 	case sender.IsAccountHolder():
 		return RECEIPTS
 	}
@@ -83,9 +85,78 @@ func calculateFundingType(sender Sender, account AccountClassification) string {
 	return ""
 }
 
-func ClassifyWithHouseAccount(sender Sender, aClassification, haClassification AccountClassification) (string, string) {
-	return "", ""
+func ClassifyWithHouseAccount(sender Sender, account, houseAccount AccountClassification) (string, string) {
+	fundingType := calculateFundingTypeWithHouseAccount(sender, account, houseAccount)
+
+	if fundingType == PROHIBITED {
+		return fundingType, ""
+	}
+
+	fundingMode := calculateFundingMode(fundingType, sender, account, houseAccount)
+
+	return fundingType, fundingMode
 }
 
-// func calculateFundingType(sender Sender, aClassification, haClassification AccountClassification) string {
-// }
+func calculateFundingMode(fundingType string, sender Sender, account, houseAccount AccountClassification) string {
+	switch fundingType {
+	case RECEIPTS:
+		if account.IsClient() {
+			return fmt.Sprintf("%s_%s", fundingType, FROM_CLIENT)
+		} else {
+			return fmt.Sprintf("%s_%s", fundingType, OBO_CLIENT)
+		}
+
+	case COLLECTIONS:
+		if isNestedCollections(account, houseAccount, sender) {
+			return fmt.Sprintf("%s_%s", fundingType, OBO_CLIENTS_CUSTOMER)
+		} else {
+			return fmt.Sprintf("%s_%s", fundingType, OBO_CLIENT)
+		}
+	}
+
+	return ""
+}
+
+func calculateFundingTypeWithHouseAccount(sender Sender, account, houseAccount AccountClassification) string {
+	switch {
+	case isNoComplianceRelationship(account, houseAccount):
+		return PROHIBITED
+
+	case isNestedPaymentWithCollections(account, houseAccount, sender):
+		return PROHIBITED
+
+	case isRegulatedAffiliateReceipts(account, houseAccount, sender):
+		return PROHIBITED
+
+	case sender.IsNotAccountHolder():
+		return COLLECTIONS
+
+	case isCorporateCollections(account, houseAccount, sender):
+		return COLLECTIONS
+
+	case sender.IsAccountHolder():
+		return RECEIPTS
+	}
+
+	return ""
+}
+
+func isNoComplianceRelationship(account, houseAccount AccountClassification) bool {
+	return account.IsNonClient() && houseAccount.IsNonClient()
+}
+
+func isNestedPaymentWithCollections(account, houseAccount AccountClassification, sender Sender) bool {
+	return houseAccount.IsRegulated() && account.IsClient() && sender.IsNotAccountHolder()
+}
+
+func isRegulatedAffiliateReceipts(account, houseAccount AccountClassification, sender Sender) bool {
+	return sender.IsAccountHolder() && account.IsClient() && houseAccount.IsNonClient() && houseAccount.IsRegulated()
+}
+
+func isCorporateCollections(account, houseAccount AccountClassification, sender Sender) bool {
+	return sender.IsAccountHolder() && account.IsNonClient() && houseAccount.IsClient() && houseAccount.IsUnregulated()
+}
+
+func isNestedCollections(account, houseAccount AccountClassification, sender Sender) bool {
+	return account.IsNonClient() && houseAccount.IsClient() && houseAccount.IsRegulated() && sender.IsNotAccountHolder()
+}

@@ -10,20 +10,45 @@ import (
 type Server struct {
 	Engine *gin.Engine
 	DB     *gorm.DB
-	Amqp   *amqp.Connection
+	*MessagingClient
+}
+
+type MessagingClient struct {
+	Connection *amqp.Connection
+	Consumers  []*MessageConsumer
+}
+
+func (mc *MessagingClient) RegisterConsumer(m *MessageConsumer) {
+	mc.Consumers = append(mc.Consumers, m)
+}
+
+type MessageConsumer struct {
+	Queue        amqp.Queue
+	Channel      *amqp.Channel
+	ConsumerName string
+	HandlerFunc  func(amqp.Delivery)
+	CloseControl chan (bool)
+}
+
+func (consumer *MessageConsumer) CancelConsumer() {
+	go func() {
+		consumer.CloseControl <- true
+	}()
 }
 
 func InitializeServer() *Server {
-	db, err := gorm.Open("mysql", "root:@tcp(nix-box:3306)/golang_tryout?charset=utf8&parseTime=True&loc=Local")
-	amqp, err := amqp.Dial("amqp://guest:guest@nix-box:5672/")
+	db, err := gorm.Open("mysql", "root:@tcp(localhost:3306)/golang_tryout?charset=utf8&parseTime=True&loc=Local")
+	amqp, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 
 	if err != nil {
 		return nil
 	}
 
+	client := &MessagingClient{Connection: amqp, Consumers: []*MessageConsumer{}}
+
 	return &Server{
-		Engine: gin.Default(),
-		DB:     db,
-		Amqp:   amqp,
+		Engine:          gin.Default(),
+		DB:              db,
+		MessagingClient: client,
 	}
 }

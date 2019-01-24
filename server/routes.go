@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/golang_tryout/app/models"
+	"github.com/mike-bhs/golang_tryout/app/models"
 )
 
 func (serv *Server) SetRoutes() {
@@ -12,6 +12,11 @@ func (serv *Server) SetRoutes() {
 		transactions.GET("/:id", serv.GetTransaction)
 		transactions.POST("/", serv.CreateTransaction)
 		transactions.PUT("/:id", serv.UpdateTransaction)
+	}
+
+	rabbitmq := serv.Engine.Group("/api/rabbitmq")
+	{
+		rabbitmq.GET("/stop_consumers", serv.StopConsumers)
 	}
 }
 

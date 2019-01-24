@@ -6,8 +6,19 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang_tryout/app/models"
+	"github.com/mike-bhs/golang_tryout/app/models"
 )
+
+func (serv *Server) StopConsumers(c *gin.Context) {
+	for _, consumer := range serv.MessagingClient.Consumers {
+		consumer.CancelConsumer()
+	}
+
+	c.JSON(200, gin.H{
+		"status":  http.StatusOK,
+		"message": "Successfuly stoped consumers",
+	})
+}
 
 func (serv *Server) GetAllTransactions(c *gin.Context) {
 	data := serv.DB.Find(&models.Transactions{}).Value

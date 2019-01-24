@@ -1,4 +1,4 @@
-module github.com/golang_tryout
+module github.com/mike-bhs/golang_tryout
 
 require (
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect

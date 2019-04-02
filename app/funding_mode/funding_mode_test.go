@@ -1,7 +1,7 @@
 package funding_mode
 
 import (
-	"fmt"
+	. "github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -33,15 +33,8 @@ func TestClassifyWithoutHouseAccount(t *testing.T) {
 
 		actualFundingType, actualFundingMode := ClassifyWithoutHouseAccount(sender, account)
 
-		if expectedFundingType != actualFundingType {
-			message := fmt.Sprintf("ClassifyWithoutHouseAccount fundingType expected: '%s', got: '%s'", expectedFundingType, actualFundingType)
-			t.Error(message)
-		}
-
-		if expectedFundingMode != actualFundingMode {
-			message := fmt.Sprintf("ClassifyWithoutHouseAccount fundingMode expected: '%s', got: '%s'", expectedFundingMode, actualFundingMode)
-			t.Error(message)
-		}
+		Equal(t, expectedFundingType, actualFundingType)
+		Equal(t, expectedFundingMode, actualFundingMode)
 	}
 }
 
@@ -82,14 +75,7 @@ func TestClassifyWithHouseAccount(t *testing.T) {
 
 		actualFundingType, actualFundingMode := ClassifyWithHouseAccount(sender, account, houseAccount)
 
-		if expectedFundingType != actualFundingType {
-			message := fmt.Sprintf("ClassifyWithHouseAccount fundingType expected: '%s', got: '%s'", expectedFundingType, actualFundingType)
-			t.Error(message)
-		}
-
-		if expectedFundingMode != actualFundingMode {
-			message := fmt.Sprintf("ClassifyWithHouseAccount fundingMode expected: '%s', got: '%s'", expectedFundingMode, actualFundingMode)
-			t.Error(message)
-		}
+		Equal(t, expectedFundingType, actualFundingType)
+		Equal(t, expectedFundingMode, actualFundingMode)
 	}
 }

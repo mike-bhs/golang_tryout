@@ -5,6 +5,7 @@
 *.so
 *.dylib
 golang_tryout
+.idea/
 
 # Test binary, build with `go test -c`
 *.test

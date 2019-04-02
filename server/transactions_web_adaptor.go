@@ -10,9 +10,7 @@ import (
 )
 
 func (serv *Server) StopConsumers(c *gin.Context) {
-	for _, consumer := range serv.MessagingClient.Consumers {
-		consumer.CancelConsumer()
-	}
+	serv.MessagingClient.StopConsumers()
 
 	c.JSON(200, gin.H{
 		"status":  http.StatusOK,

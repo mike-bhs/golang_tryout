@@ -10,7 +10,7 @@ func main() {
 	defer serv.DB.Close()
 	defer serv.MessagingClient.Connection.Close()
 
-	// serv.InitializeGracefulShutdown()
+	serv.InitializeGracefulShutdown()
 
 	go serv.StartQueues()
 

@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"log"
 	"github.com/streadway/amqp"
 	"log"
 	"os"
@@ -91,6 +92,7 @@ func InitializeServer() *Server {
 	amqp, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 
 	if err != nil {
+		log.Println("An error occurred during opening db connection", err)
 		return nil
 	}
 

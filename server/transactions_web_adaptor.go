@@ -9,15 +9,6 @@ import (
 	"github.com/mike-bhs/golang_tryout/app/models"
 )
 
-func (serv *Server) StopConsumers(c *gin.Context) {
-	serv.MessagingClient.StopConsumers()
-
-	c.JSON(200, gin.H{
-		"status":  http.StatusOK,
-		"message": "Successfuly stoped consumers",
-	})
-}
-
 func (serv *Server) GetAllTransactions(c *gin.Context) {
 	data := serv.DB.Find(&models.Transactions{}).Value
 

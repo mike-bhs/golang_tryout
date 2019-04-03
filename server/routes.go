@@ -1,11 +1,10 @@
 package server
 
 import (
-	"github.com/golang_tryout/app/models"
+	"github.com/mike-bhs/golang_tryout/app/models"
 )
 
 func (serv *Server) SetRoutes() {
-
 	transactions := serv.Engine.Group("/api/transactions")
 	{
 		transactions.GET("/", serv.GetAllTransactions)

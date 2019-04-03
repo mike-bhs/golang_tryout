@@ -1,4 +1,4 @@
-module github.com/golang_tryout
+module github.com/mike-bhs/golang_tryout
 
 require (
 	github.com/denisenkom/go-mssqldb v0.0.0-20190401154936-ce35bd87d4b3 // indirect

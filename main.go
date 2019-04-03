@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/golang_tryout/server"
+	"github.com/mike-bhs/golang_tryout/server"
 )
 
 func main() {

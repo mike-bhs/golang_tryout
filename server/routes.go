@@ -12,6 +12,11 @@ func (serv *Server) SetRoutes() {
 		transactions.POST("/", serv.CreateTransaction)
 		transactions.PUT("/:id", serv.UpdateTransaction)
 	}
+
+	crmEngine := serv.Engine.Group("/api/crm_engine")
+	{
+		crmEngine.GET("/ibans", serv.GetAllIbans)
+	}
 }
 
 func (serv *Server) RunMigrations() {

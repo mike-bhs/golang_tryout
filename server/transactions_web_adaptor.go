@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang_tryout/app/models"
+	"github.com/mike-bhs/golang_tryout/app/models"
 )
 
 func (serv *Server) GetAllTransactions(c *gin.Context) {

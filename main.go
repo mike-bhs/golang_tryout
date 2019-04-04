@@ -2,39 +2,31 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/mike-bhs/golang_tryout/db"
+	"github.com/mike-bhs/golang_tryout/rabbitmq"
 	"github.com/mike-bhs/golang_tryout/server"
 	"log"
 )
 
 func main() {
-	hasDbConnection := make(chan bool)
-	hasAmqpConnection := make(chan bool)
+	dbConfig := &db.Config{User: "root", Password: "", Host: "localhost:3306", DbName: "golang_tryout"}
+	database := &db.DataBase{Config: dbConfig}
 
-	serv := &server.Server{Engine: gin.Default()}
+	amqpConfig := &rabbitmq.Config{User: "guest", Password: "guest", Host: "localhost:5672"}
+	amqpClient := &rabbitmq.AmqpClient{Config: amqpConfig}
 
-	serv.ConnectToDbAsync(hasDbConnection, "root", "", "localhost:3306", "golang_tryout")
-	serv.ConnectToRabbitMQAsync(hasAmqpConnection, "guest", "guest", "localhost:5672")
+	serv := &server.Server{Engine: gin.Default(), DataBase: database, AmqpClient: amqpClient}
 
-	isDbConnected := <- hasDbConnection
+	go database.EstablishConnection()
+	go database.MonitorConnection()
+	defer database.CloseConnection()
 
-	if isDbConnected == false {
-		log.Println("Failed to connect to db")
-		return
-	}
+	amqpClient.EstablishConnection()
+	defer amqpClient.CloseConnection()
 
-	isAmqpConnected := <- hasAmqpConnection
+	amqpClient.InitializeGracefulShutdown()
 
-	if isAmqpConnected == false {
-		log.Println("Failed to connect to RabbitMQ")
-		return
-	}
-
-	defer serv.DB.Close()
-	defer serv.MessagingClient.Connection.Close()
-
-	serv.InitializeGracefulShutdown()
-
-	go serv.StartQueues()
+	//go amqpClient.StartQueues()
 
 	serv.SetRoutes()
 	err := serv.Engine.Run()

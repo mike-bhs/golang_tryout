@@ -15,5 +15,5 @@ func (serv *Server) SetRoutes() {
 }
 
 func (serv *Server) RunMigrations() {
-	serv.DB.AutoMigrate(&models.Transaction{})
+	serv.DB().AutoMigrate(&models.Transaction{})
 }

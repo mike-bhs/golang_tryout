@@ -10,7 +10,7 @@ import (
 )
 
 func (serv *Server) GetAllTransactions(c *gin.Context) {
-	data := serv.DB.Find(&models.Transactions{}).Value
+	data := serv.DB().Find(&models.Transactions{}).Value
 
 	c.JSON(200, gin.H{
 		"status":       http.StatusOK,
@@ -22,7 +22,7 @@ func (serv *Server) CreateTransaction(c *gin.Context) {
 	amount, _ := strconv.ParseFloat(c.PostForm("amount"), 64)
 	transaction := models.Transaction{Currency: c.PostForm("currency"), Amount: amount}
 
-	serv.DB.Save(&transaction)
+	serv.DB().Save(&transaction)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"status":  http.StatusOK,
@@ -34,7 +34,7 @@ func (serv *Server) GetTransaction(c *gin.Context) {
 	var transaction models.Transaction
 	transactionID := c.Param("id")
 
-	serv.DB.First(&transaction, transactionID)
+	serv.DB().First(&transaction, transactionID)
 
 	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data": transaction})
 }
@@ -43,7 +43,7 @@ func (serv *Server) UpdateTransaction(c *gin.Context) {
 	var transaction models.Transaction
 	transactionID := c.Param("id")
 
-	serv.DB.First(&transaction, transactionID)
+	serv.DB().First(&transaction, transactionID)
 
 	amount, present := c.GetPostForm("amount")
 
@@ -58,7 +58,7 @@ func (serv *Server) UpdateTransaction(c *gin.Context) {
 		transaction.Currency = currency
 	}
 
-	serv.DB.Save(&transaction)
+	serv.DB().Save(&transaction)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"status":  http.StatusOK,

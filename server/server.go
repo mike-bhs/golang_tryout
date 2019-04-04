@@ -1,10 +1,10 @@
 package server
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"log"
 	"github.com/streadway/amqp"
 	"log"
 	"os"
@@ -15,6 +15,62 @@ type Server struct {
 	Engine *gin.Engine
 	DB     *gorm.DB
 	*MessagingClient
+}
+
+const ReconnectTimeoutSec = 5 * time.Second
+const ReconnectAttemptsAmount = 3
+
+func (serv *Server) ConnectToDbAsync(ch chan bool, user, password, host, dbName string) {
+	dbHostUrl := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local", user, password, host, dbName)
+
+	go func() {
+		for i := 1; i < ReconnectAttemptsAmount; i++ {
+			log.Printf("Connection to DB attempt %d of %d", i, ReconnectAttemptsAmount)
+
+			db, err := gorm.Open("mysql", dbHostUrl)
+
+			if err != nil {
+				log.Println("Failed to connect to database", err)
+				time.Sleep(ReconnectTimeoutSec)
+				continue
+			}
+
+			log.Println("Db connection success")
+			serv.DB = db
+			ch <- true
+
+			return
+		}
+
+		ch <- false
+	}()
+}
+
+func (serv *Server) ConnectToRabbitMQAsync(ch chan bool, user, password, host string) {
+	amqpHostUrl := fmt.Sprintf("amqp://%s:%s@%s/", user, password, host)
+
+	go func() {
+		for i := 1; i <= ReconnectAttemptsAmount; i++ {
+			log.Printf("Connection to RabbitMQ attempt %d of %d", i, ReconnectAttemptsAmount)
+
+			conn, err := amqp.Dial(amqpHostUrl)
+
+			if err != nil {
+				log.Println("Failed to connect to RabbitMQ host", err)
+				time.Sleep(ReconnectTimeoutSec)
+				continue
+			}
+
+			log.Println("Amqp connection success")
+			client := &MessagingClient{Connection: conn, Consumers: []*MessageConsumer{}}
+			serv.MessagingClient = client
+			ch <- true
+
+			return
+		}
+
+		ch <- false
+	}()
 }
 
 type MessagingClient struct {
@@ -78,29 +134,15 @@ type MessageConsumer struct {
 }
 
 func (mc *MessageConsumer) CancelConsumer() {
-	mc.Channel.Cancel(mc.ConsumerName, true)
+	err := mc.Channel.Cancel(mc.ConsumerName, true)
+
+	if err != nil {
+		log.Println("Failed to cancel consumer", mc.ConsumerName)
+	}
 }
 
 func (mc *MessageConsumer) HandleDelivery(d amqp.Delivery) {
 	mc.IsBusy = true
 	mc.handlerFunc(d)
 	mc.IsBusy = false
-}
-
-func InitializeServer() *Server {
-	db, err := gorm.Open("mysql", "root:@tcp(localhost:3306)/golang_tryout?charset=utf8&parseTime=True&loc=Local")
-	amqp, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-
-	if err != nil {
-		log.Println("An error occurred during opening db connection", err)
-		return nil
-	}
-
-	client := &MessagingClient{Connection: amqp, Consumers: []*MessageConsumer{}}
-
-	return &Server{
-		Engine:          gin.Default(),
-		DB:              db,
-		MessagingClient: client,
-	}
 }
